@@ -34,6 +34,11 @@ async function main() {
   }
   function setBusy(value) {
     busy = value;
+    if (!value) {
+      $("summary-loading").replaceChildren();
+      $("summary-loading").hidden = true;
+      $("summary").hidden = false;
+    }
     $("summarize").disabled = value || !article?.paragraphs.length;
     $("ask").disabled = value || !article?.paragraphs.length;
     $("retry").disabled = value;
@@ -52,7 +57,12 @@ async function main() {
   function empty(target, title, text) {
     target.replaceChildren();
     const wrapper = el("div", "empty-state");
-    wrapper.append(el("span", "empty-symbol", "✦"), el("h2", "", title), el("p", "", text));
+    const illustration = el("img", "empty-symbol");
+    illustration.src = "init_icon.svg";
+    illustration.alt = "";
+    illustration.width = 72;
+    illustration.height = 84;
+    wrapper.append(illustration, el("h2", "", title), el("p", "", text));
     target.append(wrapper);
   }
   function reset() {
@@ -203,7 +213,13 @@ async function main() {
       }
       controller = new AbortController();
       setBusy(true);
-      status(kind === "translation" ? "正在翻译…" : kind === "answer" ? "正在寻找答案…" : "正在生成摘要…", false, true);
+      if (kind === "summary") {
+        status("");
+        $("summary").hidden = true;
+        renderLoading($("summary-loading"), "正在生成摘要...", {stacked:true});
+      } else {
+        status(kind === "translation" ? "正在翻译…" : "正在寻找答案…", false, true);
+      }
       const raw = await requestModel(settings, buildMessages(kind, current, { selection, question, history }), { signal: controller.signal, json: kind !== "translation" });
       if (token !== epoch) return;
       const selectedTab = await activeTab();

@@ -130,6 +130,9 @@ try {
   assert.ok(motion.during>motion.end && motion.during<motion.right,'panel moves in from the right');
   assert.equal(motion.transform,'none','finished animation leaves no transformed iframe');
   await waitText(panel,'#status','API Key');
+  await poll(()=>panel.locator('#summary .empty-symbol').evaluate(el=>el.complete && el.naturalWidth>0));
+  assert.equal(await panel.locator('#summary .empty-symbol').getAttribute('src'),'init_icon.svg');
+  await panel.locator('#summary-view').screenshot({path:path.join(artifacts,'panel-initial-state.png')});
   await poll(()=>panel.locator('.brand-logo').evaluate(el=>el.complete && el.naturalWidth>0));
   assert.equal(await panel.locator('#close-panel').evaluate(el=>el.matches(':focus')) ,false,'opening does not focus the close button');
   assert.equal(await panel.locator('#close-panel').evaluate(el=>getComputedStyle(el).outlineStyle),'none');
@@ -148,7 +151,11 @@ try {
   await options.close(); await article.bringToFront();
   let releaseLoading = holdNextResponse();
   await article.locator('#open-panel').click();
-  await checkLoading(panel.locator('#status'),'loading-summary.png');
+  await checkLoading(panel.locator('#summary-loading'),'loading-summary.png');
+  assert.equal(await panel.locator('#status').isVisible(),false,'summary has no top loading banner');
+  assert.equal(await panel.locator('#summary').isVisible(),false,'loading replaces the initial illustration and copy');
+  assert.equal(await panel.locator('#summary-loading').innerText(),'正在生成摘要...');
+  await panel.locator('#summary-view').screenshot({path:path.join(artifacts,'summary-generating.png')});
   releaseLoading();
   await waitText(panel,'#summary','摘要应当关联原文');
   assert.equal(await panel.locator('.pw-loading').count(),0,'summary replaces its loading indicator');

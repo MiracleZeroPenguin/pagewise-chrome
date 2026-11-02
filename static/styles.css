@@ -395,10 +395,16 @@ textarea:focus {
   text-align: center;
   padding: 25px 6px 30px;
 }
+.summary-loading {
+  padding: 16px 4px 22px;
+  color: #64785e;
+}
 .empty-symbol {
-  font-family: var(--serif);
-  font-size: 37px;
-  color: #bcc8aa;
+  display: block;
+  width: 72px;
+  height: 84px;
+  object-fit: contain;
+  margin: 0 auto 10px;
 }
 .empty-state h2 {
   font-family: var(--serif);
@@ -640,7 +646,6 @@ footer {
 .panel .chat-answer { padding-bottom: 8px; }
 .panel .chat-answer p { margin: 8px 0; }
 .panel .empty-state { padding: 16px 4px 18px; }
-.panel .empty-symbol { font-size: 1.75em; }
 .panel .empty-state h2 { font-size: 1.125em; margin: 6px 0; }
 .panel .empty-state p { line-height: 1.55; }
 .panel .translation-result { padding: 12px; }

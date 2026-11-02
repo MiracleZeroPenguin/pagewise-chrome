@@ -16,7 +16,7 @@ if json.loads((root / 'package.json').read_text())['version'] != version:
 
 required = {
     'manifest.json', 'content.js', 'background.js', 'panel.js', 'options.js',
-    'panel.html', 'options.html', 'styles.css', 'icon.svg',
+    'panel.html', 'options.html', 'styles.css', 'icon.svg', 'init_icon.svg',
     'icons/icon-16.png', 'icons/icon-32.png', 'icons/icon-48.png', 'icons/icon-128.png',
     'THIRD_PARTY_NOTICES.md', 'licenses/readability-Apache-2.0.txt',
 }

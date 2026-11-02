@@ -6,6 +6,7 @@ for(const file of ['panel.html','options.html','styles.css'])await copyFile(`sta
 await copyFile('manifest.json','dist/manifest.json');
 
 await copyFile('icon.svg','dist/icon.svg');
+await copyFile('init_icon.svg','dist/init_icon.svg');
 await cp('static/icons','dist/icons',{recursive:true});
 await mkdir('dist/licenses',{recursive:true});
 await copyFile('node_modules/@mozilla/readability/LICENSE.md','dist/licenses/readability-Apache-2.0.txt');

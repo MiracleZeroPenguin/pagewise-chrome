@@ -13,7 +13,8 @@
   <div id="status" class="status" role="status" hidden></div><div id="notice" class="notice" hidden></div>
   <button id="retry" class="secondary wide" hidden>重试</button>
   <section id="summary-view" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
-    <div id="summary"><div class="empty-state"><span class="empty-symbol">✦</span><h2>先看全貌，再读细节</h2><p>提炼关键观点，随时回到原文。</p></div></div>
+    <div id="summary-loading" class="summary-loading" role="status" hidden></div>
+    <div id="summary"><div class="empty-state"><img class="empty-symbol" src="init_icon.svg" width="72" height="84" alt=""><h2>先看全貌，再读细节</h2><p>提炼关键观点，随时回到原文。</p></div></div>
     <button id="summarize" class="primary wide">生成中文摘要 <span>↗</span></button>
   </section>
   <section id="question-view" role="tabpanel" aria-labelledby="tab-question" hidden>
