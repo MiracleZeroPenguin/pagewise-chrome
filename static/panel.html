@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN" class="panel-document">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>佩知 · Pagewise</title><link rel="icon" href="icons/icon-32.png" type="image/png"><link rel="stylesheet" href="styles.css"></head>
+<body class="panel">
+<header class="masthead"><div class="brand"><img class="brand-logo" src="icon.svg" alt="" width="20" height="26"><strong>佩知</strong></div><div class="panel-actions"><button id="settings" class="icon-button" title="设置" aria-label="设置">⚙</button><button id="close-panel" class="icon-button" title="关闭面板（Esc）" aria-label="关闭面板">×</button></div></header>
+<main>
+  <section class="article-header"><h1 id="article-title">一页内容，慢慢读懂。</h1></section>
+  <div class="tabs" role="tablist" aria-label="阅读模式">
+    <button id="tab-summary" role="tab" type="button" class="active" aria-selected="true" aria-controls="summary-view" tabindex="0">摘要</button>
+    <button id="tab-question" role="tab" type="button" aria-selected="false" aria-controls="question-view" tabindex="-1">提问</button>
+    <button id="tab-translation" role="tab" type="button" aria-selected="false" aria-controls="translation-view" tabindex="-1" hidden>选文翻译</button>
+  </div>
+  <div id="status" class="status" role="status" hidden></div><div id="notice" class="notice" hidden></div>
+  <button id="retry" class="secondary wide" hidden>重试</button>
+  <section id="summary-view" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
+    <div id="summary"><div class="empty-state"><span class="empty-symbol">✦</span><h2>先看全貌，再读细节</h2><p>提炼关键观点，随时回到原文。</p></div></div>
+    <button id="summarize" class="primary wide">生成中文摘要 <span>↗</span></button>
+  </section>
+  <section id="question-view" role="tabpanel" aria-labelledby="tab-question" hidden>
+    <div id="chat" role="log" aria-label="文章问答记录" aria-live="polite" tabindex="0"></div>
+    <form id="question-form">
+      <label class="sr-only" for="question">关于文章的问题</label>
+      <textarea id="question" rows="2" maxlength="2000" placeholder="关于这篇文章，你想了解什么？"></textarea>
+      <div class="composer-bottom"><span>回答仅基于当前文章</span><button id="ask" class="send" type="submit" title="发送问题" aria-label="发送问题">↑</button></div>
+    </form>
+  </section>
+  <section id="translation-view" role="tabpanel" aria-labelledby="tab-translation" tabindex="0" hidden>
+    <div id="translation"><div class="empty-state"><h2>选文翻译</h2><p>在网页中选中文字，然后点击「翻译选文」。</p></div></div>
+  </section>
+</main>
+<script src="panel.js"></script>
+</body>
+</html>
