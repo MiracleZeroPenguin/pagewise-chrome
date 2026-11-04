@@ -85,9 +85,9 @@ async function requestModel(settings, messages, { signal, fetchImpl = globalThis
     const reasoning = alwaysThinking
       ? { thinking: { type: "enabled" }, reasoning_effort: "low" }
       : { thinking: { type: "disabled" } };
-    // GPT-5-mini rejects GLM thinking and legacy sampling/token parameters.
-    const gpt5Mini = /^gpt-5-mini(?:-\d{4}-\d{2}-\d{2})?$/.test(settings.model);
-    const parameters = gpt5Mini
+    // OpenAI reasoning models use completion budgets instead of GLM parameters.
+    const openAIReasoning = settings.model === "gpt-6-luna" || /^gpt-5-mini(?:-\d{4}-\d{2}-\d{2})?$/.test(settings.model);
+    const parameters = openAIReasoning
       ? { max_completion_tokens: 2500, reasoning_effort: "low" }
       : { temperature: 0.2, max_tokens: 2500, ...reasoning };
     const response = await fetchImpl(settings.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.apiKey}` }, body: JSON.stringify({ model: settings.model, messages, ...parameters, ...json ? { response_format: { type: "json_object" } } : {} }), signal: controller.signal });
