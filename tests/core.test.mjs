@@ -71,3 +71,19 @@ test('cache keys differ for article changes and models',()=>{
  assert.notEqual(articleKey({documentId:'d',fingerprint:'1'},'a'),articleKey({documentId:'d',fingerprint:'2'},'a'));
  assert.notEqual(articleKey({documentId:'d',fingerprint:'1'},'a'),articleKey({documentId:'d',fingerprint:'1'},'b'));
 });
+
+test('GPT-5-mini uses compatible parameters for text and JSON requests',async()=>{
+ for(const model of ['gpt-5-mini','gpt-5-mini-2025-08-07']){
+  for(const json of [false,true]){
+   let body;
+   const result=await requestModel({...settings,model},[{role:'user',content:'test'}],{json,fetchImpl:async(url,init)=>{
+    body=JSON.parse(init.body);
+    for(const key of ['thinking','temperature','max_tokens']) assert.equal(key in body,false,key);
+    return new Response(JSON.stringify({choices:[{message:{content:'ok'}}]}));
+   }});
+   assert.equal(result,'ok');assert.equal(body.model,model);
+   assert.equal(body.max_completion_tokens,2500);assert.equal(body.reasoning_effort,'low');
+   assert.deepEqual(body.response_format,json?{type:'json_object'}:undefined);
+  }
+ }
+});
