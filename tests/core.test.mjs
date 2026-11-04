@@ -20,8 +20,44 @@ test('provider sends disabled thinking, auth and returns content',async()=>{
  let sent;const result=await requestModel(settings,[{role:'user',content:'test'}],{fetchImpl:async(url,init)=>{sent={url,init};return new Response(JSON.stringify({choices:[{message:{content:'ok'}}]}));}});
  assert.equal(result,'ok'); assert.equal(sent.init.headers.Authorization,'Bearer secret');assert.equal(JSON.parse(sent.init.body).thinking.type,'disabled');
 });
-test('provider errors are actionable and never reveal provider body',async()=>{
+test('GLM 5.3 Flash family keeps thinking enabled for text and JSON requests',async()=>{
+ for(const model of ['glm-5.3-flash','glm-5.3-flashx','glm-5.3-flashx-legal']){
+  for(const json of [false,true]){
+   let body;
+   const result=await requestModel({...settings,model},[{role:'user',content:'test'}],{json,fetchImpl:async(url,init)=>{
+    body=JSON.parse(init.body);
+    if(body.thinking?.type==='disabled')return new Response(JSON.stringify({error:{code:1210,message:'该模型始终思考，不支持关闭思考；请使用 low、high 或 max。'}}),{status:400});
+    return new Response(JSON.stringify({choices:[{message:{content:'ok'}}]}));
+   }});
+   assert.equal(result,'ok');assert.equal(body.thinking.type,'enabled');assert.equal(body.reasoning_effort,'low');
+   assert.equal(body.max_tokens,2500);
+   assert.deepEqual(body.response_format,json?{type:'json_object'}:undefined);
+  }
+ }
+});
+test('provider errors are actionable and never reveal unstructured provider body',async()=>{
  for(const [status,expected] of [[401,/API Key/],[429,/频繁/],[500,/500/]]) await assert.rejects(requestModel(settings,[],{fetchImpl:async()=>new Response('secret',{status})}),expected);
+});
+test('404 retains provider code and reason instead of suggesting a transient outage',async()=>{
+ await assert.rejects(requestModel(settings,[],{fetchImpl:async()=>new Response(JSON.stringify({error:{code:'route_not_found',message:'No route for this credential'}}),{status:404})}),error=>{
+  assert.match(error.message,/HTTP 404/);assert.match(error.message,/route_not_found/);assert.match(error.message,/No route for this credential/);
+  assert.doesNotMatch(error.message,/稍后重试|暂时不可用/);return true;
+ });
+});
+test('diagnostics redact credentials in code and message before truncating',async()=>{
+ await assert.rejects(requestModel(settings,[],{fetchImpl:async()=>new Response(JSON.stringify({error:{code:'secret',message:'Rejected secret; Authorization: Bearer another-token; '+ 'x'.repeat(2000)}}),{status:404})}),error=>{
+  assert.match(error.message,/Rejected/);assert.doesNotMatch(error.message,/secret|another-token/);assert.ok(error.message.length<700);return true;
+ });
+});
+test('404 with HTML or malformed JSON keeps a useful safe fallback',async()=>{
+ for(const body of ['<html>secret</html>','{"error":','{"error":{"code":{},"message":[]}}']){
+  await assert.rejects(requestModel(settings,[],{fetchImpl:async()=>new Response(body,{status:404})}),error=>{
+   assert.match(error.message,/HTTP 404/);assert.match(error.message,/接口/);assert.doesNotMatch(error.message,/secret|<html>|无法解析|暂时不可用/);return true;
+  });
+ }
+});
+test('numeric provider errors remain visible alongside authentication guidance',async()=>{
+ await assert.rejects(requestModel(settings,[],{fetchImpl:async()=>new Response(JSON.stringify({error:{code:1000,message:'身份验证失败'}}),{status:401})}),/HTTP 401.*1000.*身份验证失败/);
 });
 test('provider rejects missing key and empty successful response',async()=>{
  await assert.rejects(requestModel({...settings,apiKey:''},[]),/API Key/);

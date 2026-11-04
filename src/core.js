@@ -37,6 +37,37 @@ function validateSettings(value, previousKey = "") {
   if (!value.model?.trim()) throw new Error("请填写模型名称。");
   return { endpoint: url.href, model: value.model.trim(), apiKey: value.apiKey?.trim() || previousKey };
 }
+function safeDiagnostic(value, apiKey, limit) {
+  if (typeof value !== "string" && typeof value !== "number") return "";
+  let text = String(value);
+  // Redact before shortening: a provider may echo the credential in its error.
+  for (const key of new Set([apiKey, apiKey?.trim(), apiKey && encodeURIComponent(apiKey)])) {
+    if (key) text = text.split(key).join("[已隐藏]");
+  }
+  text = text.replace(/Bearer\s+[^\s,;"'<>]+/gi, "Bearer [已隐藏]")
+    .replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
+  return text.length > limit ? text.slice(0, limit) + "…" : text;
+}
+async function providerError(response, apiKey) {
+  const status = response.status;
+  let hint = "请求未被接受，请检查接口和模型配置。";
+  if (status === 401 || status === 403) hint = "API Key 无效或没有模型权限，请检查设置。";
+  else if (status === 429) hint = "请求过于频繁或额度不足，请查看服务端原因。";
+  else if (status === 404) hint = "接口或资源未找到，请核对接口、模型及密钥所属产品。";
+  else if (status >= 500) hint = "服务暂时不可用，请稍后重试。";
+  let details = "";
+  try {
+    const data = await response.json();
+    const error = data?.error && typeof data.error === "object" ? data.error : data;
+    const code = safeDiagnostic(error?.code, apiKey, 80);
+    const message = safeDiagnostic(error?.message, apiKey, 400);
+    if (code) details += ` 服务端错误码：${code}。`;
+    if (message) details += ` 服务端原因：${message}`;
+  } catch {
+    // HTML gateway pages and malformed bodies must not hide the HTTP status.
+  }
+  return new Error(`请求失败（HTTP ${status}）。${hint}${details || " 服务端未提供可识别的错误详情。"}`);
+}
 async function requestModel(settings, messages, { signal, fetchImpl = globalThis.fetch, timeoutMs = 6e4, json = false } = {}) {
   if (!settings.apiKey?.trim()) throw new Error("请先在设置中填写 API Key。");
   const controller = new AbortController();
@@ -49,11 +80,14 @@ async function requestModel(settings, messages, { signal, fetchImpl = globalThis
     controller.abort();
   }, timeoutMs);
   try {
-    const response = await fetchImpl(settings.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.apiKey}` }, body: JSON.stringify({ model: settings.model, messages, temperature: 0.2, max_tokens: 2500, thinking: { type: "disabled" }, ...json ? { response_format: { type: "json_object" } } : {} }), signal: controller.signal });
+    // These models always reason; disabling thinking is rejected with code 1210.
+    const alwaysThinking = ["glm-5.3-flash", "glm-5.3-flashx", "glm-5.3-flashx-legal"].includes(settings.model.toLowerCase());
+    const reasoning = alwaysThinking
+      ? { thinking: { type: "enabled" }, reasoning_effort: "low" }
+      : { thinking: { type: "disabled" } };
+    const response = await fetchImpl(settings.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.apiKey}` }, body: JSON.stringify({ model: settings.model, messages, temperature: 0.2, max_tokens: 2500, ...reasoning, ...json ? { response_format: { type: "json_object" } } : {} }), signal: controller.signal });
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) throw new Error("API Key 无效或没有模型权限，请检查设置。");
-      if (response.status === 429) throw new Error("请求过于频繁或额度不足，请稍后再试。");
-      throw new Error(`服务暂时不可用（HTTP ${response.status}），请稍后重试。`);
+      throw await providerError(response, settings.apiKey);
     }
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;

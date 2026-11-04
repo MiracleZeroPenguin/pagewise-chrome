@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "佩知 · Pagewise",
-  "version": "0.4.17",
+  "version": "0.4.19",
   "description": "你的网页阅读搭子：中文摘要、选文翻译、原文溯源与文章问答。",
   "minimum_chrome_version": "116",
   "permissions": [

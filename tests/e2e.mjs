@@ -57,6 +57,10 @@ try {
   await context.route('https://open.bigmodel.cn/**', async route => {
     const body = route.request().postDataJSON(); requests.push(body);
     const requestMode = mode;
+    if (requestMode === 'connection-404') {
+      await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({error:{code:'diagnostic_test',message:'Credential route unavailable: test-only-not-a-real-key <b>plain text</b>'}})});
+      return;
+    }
     const gate = nextResponseGate; nextResponseGate = null;
     if (gate) await gate;
     const payload = requestMode === 'connection' ? {} : JSON.parse(body.messages.at(-1).content);
@@ -410,6 +414,15 @@ try {
   releaseLoading();
   await waitText(connectionSettings,'#feedback','连接成功');
   assert.equal(await connectionSettings.locator('.pw-loading').count(),0);
+  mode='connection-404';
+  await connectionSettings.locator('#test-connection').click();
+  await waitText(connectionSettings,'#feedback','diagnostic_test');
+  const diagnostic=await connectionSettings.locator('#feedback').innerText();
+  assert.match(diagnostic,/HTTP 404/);assert.match(diagnostic,/Credential route unavailable/);
+  assert.doesNotMatch(diagnostic,/test-only-not-a-real-key|暂时不可用/);
+  assert.equal(await connectionSettings.locator('#feedback b').count(),0,'provider errors are rendered as plain text');
+  assert.equal(await connectionSettings.locator('#test-connection').isEnabled(),true);
+  mode='connection';
   console.log('PASS: shared penguin loading for summary, question, paragraph, word and settings; reduced motion and completion cleanup.');
 } finally {
   await context?.close();

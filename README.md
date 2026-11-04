@@ -51,7 +51,9 @@
 
 点击「测试连接」只发送一句测试文字，不发送网页内容。模型是否可用、费用和限额取决于服务商及你的账号权限。
 
-接口需支持标准 Chat Completions 返回结构、`thinking: {"type":"disabled"}`，以及摘要和问答所用的 `response_format: {"type":"json_object"}`；不同服务的兼容程度可能不同。
+连接失败时会显示 HTTP 状态码，以及服务端 JSON 中的错误码和原因（如有）。404 不再统一提示稍后重试。错误详情以纯文本展示，并遮蔽当前 API Key；非 JSON 响应保留状态提示。排查时请提供错误提示和模型名称，不要提供密钥。
+
+接口需支持标准 Chat Completions 返回结构，以及摘要和问答所用的 `response_format: {"type":"json_object"}`。`glm-5.3-flash`、`glm-5.3-flashx`、`glm-5.3-flashx-legal` 始终启用思考，佩知使用 `thinking: {"type":"enabled"}` 和 `reasoning_effort: "low"`；其他模型沿用 `thinking: {"type":"disabled"}`。不同服务的兼容程度可能不同。
 
 ## 使用提示
 
